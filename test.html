@@ -1,0 +1,205 @@
+<html>
+<base href="https://rawcdn.githack.com/Gzh0821/pvzge_web/master/docs/">
+<head>
+  <meta charset="utf-8">  
+  <title>PvZ2 Gardenless Online | 0.4.2</title>
+
+  <meta name="viewport"
+    content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1,minimal-ui=true" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="format-detection" content="telephone=no">
+
+  <meta name="renderer" content="webkit" />
+  <meta name="force-rendering" content="webkit" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="msapplication-tap-highlight" content="no">
+
+  <meta name="full-screen" content="yes" />
+  <meta name="x5-fullscreen" content="true" />
+  <meta name="360-fullscreen" content="true" />
+
+  <meta name="x5-page-mode" content="app">
+
+  <link rel="stylesheet" type="text/css" href="style.f76d1.css" />
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+    }
+    
+    #GameDiv {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+    }
+    
+    #Cocos3dGameContainer {
+      width: 100%;
+      height: 100%;
+    }
+    
+    #GameCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      z-index: 1000;
+    }
+    
+    .loading-bar {
+      width: 300px;
+      height: 20px;
+      background: #333;
+      border: 2px solid #555;
+      margin-top: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .loading-progress {
+      width: 0%;
+      height: 100%;
+      background: #4CAF50;
+      transition: width 0.3s;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="loading">
+    <h2>Loading Plants vs. Zombies 2 Gardenless...</h2>
+    <div class="loading-bar">
+      <div class="loading-progress" id="loadingProgress"></div>
+    </div>
+    <p id="loadingText">Initializing...</p>
+  </div>
+
+  <div id="GameDiv" cc_exact_fit_screen="true">
+    <div id="Cocos3dGameContainer">
+      <canvas id="GameCanvas" oncontextmenu="event.preventDefault()" tabindex="99"></canvas>
+    </div>
+  </div>
+
+  <!-- Polyfills bundle -->
+  <script src="src/polyfills.bundle.5adbf.js" charset="utf-8"></script>
+
+  <!-- SystemJS support -->
+  <script src="src/system.bundle.543e6.js" charset="utf-8"></script>
+
+  <!-- Import map -->
+  <script src="src/import-map.7352e.json" type="systemjs-importmap" charset="utf-8"></script>
+
+  <script>
+    // Loading progress simulation
+    let progress = 0;
+    const loadingInterval = setInterval(() => {
+      progress += Math.random() * 10;
+      if (progress > 90) progress = 90;
+      
+      document.getElementById('loadingProgress').style.width = progress + '%';
+      document.getElementById('loadingText').textContent = `Loading... ${Math.round(progress)}%`;
+    }, 300);
+
+    // Enhanced error handling for game loading
+    window.addEventListener('error', function(e) {
+      console.error('Game loading error:', e.error);
+      document.getElementById('loadingText').textContent = 'Error loading game. Check console for details.';
+    });
+
+    // Load the main game script with better error handling
+    System.import('./index.3ff63.js')
+      .then(() => {
+        clearInterval(loadingInterval);
+        document.getElementById('loadingProgress').style.width = '100%';
+        document.getElementById('loadingText').textContent = 'Game loaded successfully!';
+        
+        // Hide loading screen after a brief delay
+        setTimeout(() => {
+          document.getElementById('loading').style.display = 'none';
+        }, 1000);
+      })
+      .catch(function(err) {
+        console.error('Failed to load game:', err);
+        clearInterval(loadingInterval);
+        document.getElementById('loadingText').textContent = 'Failed to load game. Please refresh the page.';
+        document.getElementById('loadingText').style.color = '#ff4444';
+      });
+
+    // Fix for CORS and CDN issues
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+      const url = args[0];
+      if (typeof url === 'string' && !url.startsWith('http')) {
+        // Convert relative URLs to absolute using the base href
+        args[0] = new URL(url, document.baseURI).href;
+      }
+      return originalFetch.apply(this, args);
+    };
+
+    // Canvas context fix for some browsers
+    window.addEventListener('DOMContentLoaded', function() {
+      const canvas = document.getElementById('GameCanvas');
+      if (canvas) {
+        // Ensure canvas has proper dimensions
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Fix for WebGL context
+        const contexts = ['webgl2', 'webgl', 'experimental-webgl'];
+        for (let contextType of contexts) {
+          try {
+            const context = canvas.getContext(contextType);
+            if (context) break;
+          } catch (e) {
+            console.warn(`Failed to get ${contextType} context:`, e);
+          }
+        }
+      }
+    });
+
+    // Remove problematic ad scripts that might block loading
+    const adScripts = [
+      'https://www.googletagmanager.com/gtag/js',
+      'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
+      'https://fundingchoicesmessages.google.com/i/'
+    ];
+    
+    // Intercept and block ad-related requests
+    const originalAppendChild = Element.prototype.appendChild;
+    Element.prototype.appendChild = function(element) {
+      if (element.tagName === 'SCRIPT' && element.src) {
+        for (let adUrl of adScripts) {
+          if (element.src.includes(adUrl)) {
+            console.log('Blocked ad script:', element.src);
+            return element; // Don't actually append it
+          }
+        }
+      }
+      return originalAppendChild.call(this, element);
+    };
+  </script>
+</body>
+</html>
