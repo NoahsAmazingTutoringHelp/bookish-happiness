@@ -37,23 +37,19 @@
         
         const gameUrl = "https://rawcdn.githack.com/Gzh0821/pvzge_web/master/docs/index.html";
         
-        // Load the game after the alert
         window.addEventListener('load', function() {
             document.getElementById('gameFrame').src = gameUrl;
             document.getElementById('loading').style.display = 'none';
         });
 
-        // Handle iframe errors
         document.getElementById('gameFrame').addEventListener('load', function() {
             try {
-                // Check if iframe loaded successfully
                 const iframe = document.getElementById('gameFrame');
                 if (iframe.contentWindow.location.href === 'about:blank') {
                     document.getElementById('loading').innerHTML = 
                         'Game blocked by CORS.<br>Try using a different method.';
                 }
             } catch (e) {
-                // CORS error - can't access iframe content
                 document.getElementById('loading').innerHTML = 
                     'Game loaded but may have CORS restrictions.<br>Check browser console for errors.';
             }
@@ -61,5 +57,6 @@
     </script>
 </body>
 </html>
+
 
 
